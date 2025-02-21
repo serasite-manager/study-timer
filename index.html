@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本日の勉強時間</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        #timer {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+        button {
+            font-size: 16px;
+            margin: 5px;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>本日の勉強時間</h1>
+    <div id="timer">00:00:00</div>
+    <button onclick="startTimer()">スタート</button>
+    <button onclick="stopTimer()">ストップ</button>
+    <button onclick="resetTimer()">リセット</button>
+
+    <script>
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval;
+        let running = false;
+
+        function updateTimer() {
+            const now = Date.now() - startTime + elapsedTime;
+            const hours = String(Math.floor(now / 3600000)).padStart(2, '0');
+            const minutes = String(Math.floor((now % 3600000) / 60000)).padStart(2, '0');
+            const seconds = String(Math.floor((now % 60000) / 1000)).padStart(2, '0');
+            document.getElementById('timer').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        function startTimer() {
+            if (!running) {
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 1000);
+                running = true;
+            }
+        }
+
+        function stopTimer() {
+            if (running) {
+                clearInterval(timerInterval);
+                elapsedTime += Date.now() - startTime;
+                running = false;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            elapsedTime = 0;
+            document.getElementById('timer').textContent = "00:00:00";
+            running = false;
+        }
+    </script>
+
+</body>
+</html>
