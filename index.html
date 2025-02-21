@@ -34,7 +34,7 @@
 
     <h1>本日の勉強時間</h1>
     <div id="timer">00:00:00</div>
-    <div id="startTimeDisplay">勉強開始時刻: --:--:--</div>
+    <div id="startTimeDisplay">勉強開始時刻: --時--分</div>
     <button onclick="startTimer()">スタート</button>
     <button onclick="stopTimer()">ストップ</button>
     <button onclick="resetTimer()">リセット</button>
@@ -59,12 +59,11 @@
                 timerInterval = setInterval(updateTimer, 1000);
                 running = true;
 
-                // 勉強開始時刻を表示
+                // 勉強開始時刻を「-時-分」形式で表示
                 const startDate = new Date();
-                const startHour = String(startDate.getHours()).padStart(2, '0');
-                const startMinute = String(startDate.getMinutes()).padStart(2, '0');
-                const startSecond = String(startDate.getSeconds()).padStart(2, '0');
-                document.getElementById('startTimeDisplay').textContent = `勉強開始時刻: ${startHour}:${startMinute}:${startSecond}`;
+                const startHour = startDate.getHours();
+                const startMinute = startDate.getMinutes();
+                document.getElementById('startTimeDisplay').textContent = `勉強開始時刻: ${startHour}時${startMinute}分`;
             }
         }
 
@@ -80,7 +79,7 @@
             clearInterval(timerInterval);
             elapsedTime = 0;
             document.getElementById('timer').textContent = "00:00:00";
-            document.getElementById('startTimeDisplay').textContent = "勉強開始時刻: --:--:--";
+            document.getElementById('startTimeDisplay').textContent = "勉強開始時刻: --時--分";
             running = false;
         }
     </script>
