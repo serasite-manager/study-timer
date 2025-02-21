@@ -59,10 +59,9 @@
                 timerInterval = setInterval(updateTimer, 1000);
                 running = true;
 
-                // 勉強開始時刻を「-時-分」形式で表示
                 const startDate = new Date();
-                const startHour = startDate.getHours();
-                const startMinute = startDate.getMinutes();
+                const startHour = String(startDate.getHours()).padStart(2, '0');
+                const startMinute = String(startDate.getMinutes()).padStart(2, '0');
                 document.getElementById('startTimeDisplay').textContent = `勉強開始時刻: ${startHour}時${startMinute}分`;
             }
         }
@@ -86,3 +85,4 @@
 
 </body>
 </html>
+
