@@ -14,11 +14,17 @@
             font-size: 24px;
         }
         #timer {
-            font-size: 48px;
+            font-size: 72px;
+            font-weight: bold;
             margin: 20px 0;
         }
-        button {
+        #startTimeDisplay {
             font-size: 16px;
+            color: gray;
+            margin-bottom: 20px;
+        }
+        button {
+            font-size: 18px;
             margin: 5px;
             padding: 10px 20px;
         }
@@ -28,6 +34,7 @@
 
     <h1>本日の勉強時間</h1>
     <div id="timer">00:00:00</div>
+    <div id="startTimeDisplay">勉強開始時刻: --:--:--</div>
     <button onclick="startTimer()">スタート</button>
     <button onclick="stopTimer()">ストップ</button>
     <button onclick="resetTimer()">リセット</button>
@@ -51,6 +58,13 @@
                 startTime = Date.now();
                 timerInterval = setInterval(updateTimer, 1000);
                 running = true;
+
+                // 勉強開始時刻を表示
+                const startDate = new Date();
+                const startHour = String(startDate.getHours()).padStart(2, '0');
+                const startMinute = String(startDate.getMinutes()).padStart(2, '0');
+                const startSecond = String(startDate.getSeconds()).padStart(2, '0');
+                document.getElementById('startTimeDisplay').textContent = `勉強開始時刻: ${startHour}:${startMinute}:${startSecond}`;
             }
         }
 
@@ -66,6 +80,7 @@
             clearInterval(timerInterval);
             elapsedTime = 0;
             document.getElementById('timer').textContent = "00:00:00";
+            document.getElementById('startTimeDisplay').textContent = "勉強開始時刻: --:--:--";
             running = false;
         }
     </script>
