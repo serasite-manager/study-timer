@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>本日の勉強時間</title>
+    <title>勉強時間</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,7 +32,7 @@
 </head>
 <body>
 
-    <h1>本日の勉強時間</h1>
+    <h1>勉強時間</h1>
     <div id="timer">00:00:00</div>
     <div id="startTimeDisplay">勉強開始時刻: --時--分</div>
     <button onclick="startTimer()">スタート</button>
@@ -44,6 +44,7 @@
         let elapsedTime = 0;
         let timerInterval;
         let running = false;
+        let startDate = null;
 
         function updateTimer() {
             const now = Date.now() - startTime + elapsedTime;
@@ -59,10 +60,20 @@
                 timerInterval = setInterval(updateTimer, 1000);
                 running = true;
 
-                const startDate = new Date();
+                startDate = new Date();
+                const currentDate = new Date();
+                
+                const startMonth = String(startDate.getMonth() + 1).padStart(2, '0'); // 月は0から始まる
+                const startDay = String(startDate.getDate()).padStart(2, '0');
                 const startHour = String(startDate.getHours()).padStart(2, '0');
                 const startMinute = String(startDate.getMinutes()).padStart(2, '0');
-                document.getElementById('startTimeDisplay').textContent = `勉強開始時刻: ${startHour}時${startMinute}分`;
+
+                let startTimeText = `${startHour}時${startMinute}分`;
+                if (startDate.getDate() !== currentDate.getDate()) {
+                    startTimeText = `${startMonth}月${startDay}日 ${startHour}時${startMinute}分`;
+                }
+
+                document.getElementById('startTimeDisplay').textContent = `勉強開始時刻: ${startTimeText}`;
             }
         }
 
