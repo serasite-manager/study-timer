@@ -10,90 +10,170 @@
             text-align: center;
             margin: 50px;
         }
-        h1 {
-            font-size: 24px;
-        }
-        #timer {
+        .timer {
             font-size: 72px;
             font-weight: bold;
             margin: 20px 0;
         }
-        #startTimeDisplay {
+        .startTimeDisplay {
             font-size: 16px;
             color: gray;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+        }
+        .section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
         }
         button {
             font-size: 18px;
             margin: 5px;
             padding: 10px 20px;
         }
+        #breakTimer {
+            display: none;
+        }
+        #breakTotal {
+            font-size: 14px;
+            color: gray;
+            margin-top: -10px;
+        }
     </style>
 </head>
 <body>
 
-    <h1>勉強時間</h1>
-    <div id="timer">00:00:00</div>
-    <div id="startTimeDisplay">勉強開始時刻: --時--分</div>
-    <button onclick="startTimer()">スタート</button>
-    <button onclick="stopTimer()">ストップ</button>
-    <button onclick="resetTimer()">リセット</button>
+    <!-- 勉強時間 -->
+    <div class="section">
+        <h2>勉強時間</h2>
+        <div id="studyTimer" class="timer">00:00:00</div>
+        <div id="studyStartTime" class="startTimeDisplay">勉強開始時刻: --時--分</div>
+        <button onclick="startStudy()">スタート</button>
+        <button onclick="stopStudy()">ストップ</button>
+        <button onclick="resetAll()">リセット</button>
+        <button id="breakToggleButton" onclick="toggleBreak()">休憩開始</button>
+
+        <!-- 休憩時間（初期は非表示）-->
+        <div id="breakTimer">
+            <h2>休憩時間</h2>
+            <div id="breakTime" class="timer">00:00:00</div>
+            <div id="breakTotal" class="startTimeDisplay">休憩時間合計: 00:00:00</div>
+        </div>
+    </div>
 
     <script>
-        let startTime = 0;
-        let elapsedTime = 0;
-        let timerInterval;
-        let running = false;
-        let startDate = null;
+        let studyStartTime = 0, studyElapsedTime = 0, studyTimerInterval, studyRunning = false, studyDate = null;
+        let breakStartTime = 0, breakElapsedTime = 0, breakTotalTime = 0, breakTimerInterval, breakRunning = false;
+        let onBreak = false;
 
-        function updateTimer() {
+        function updateTimer(timerId, startTime, elapsedTime) {
             const now = Date.now() - startTime + elapsedTime;
             const hours = String(Math.floor(now / 3600000)).padStart(2, '0');
             const minutes = String(Math.floor((now % 3600000) / 60000)).padStart(2, '0');
             const seconds = String(Math.floor((now % 60000) / 1000)).padStart(2, '0');
-            document.getElementById('timer').textContent = `${hours}:${minutes}:${seconds}`;
+            document.getElementById(timerId).textContent = `${hours}:${minutes}:${seconds}`;
         }
 
-        function startTimer() {
-            if (!running) {
-                startTime = Date.now();
-                timerInterval = setInterval(updateTimer, 1000);
-                running = true;
+        function formatTime(date) {
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hour = String(date.getHours()).padStart(2, '0');
+            const minute = String(date.getMinutes()).padStart(2, '0');
+            return { short: `${hour}時${minute}分`, long: `${month}月${day}日 ${hour}時${minute}分` };
+        }
 
-                startDate = new Date();
-                const currentDate = new Date();
-                
-                const startMonth = String(startDate.getMonth() + 1).padStart(2, '0'); // 月は0から始まる
-                const startDay = String(startDate.getDate()).padStart(2, '0');
-                const startHour = String(startDate.getHours()).padStart(2, '0');
-                const startMinute = String(startDate.getMinutes()).padStart(2, '0');
+        function startStudy() {
+            if (!studyRunning) {
+                studyStartTime = Date.now();
+                studyTimerInterval = setInterval(() => updateTimer("studyTimer", studyStartTime, studyElapsedTime), 1000);
+                studyRunning = true;
+                studyDate = new Date();
 
-                let startTimeText = `${startHour}時${startMinute}分`;
-                if (startDate.getDate() !== currentDate.getDate()) {
-                    startTimeText = `${startMonth}月${startDay}日 ${startHour}時${startMinute}分`;
-                }
-
-                document.getElementById('startTimeDisplay').textContent = `勉強開始時刻: ${startTimeText}`;
+                const now = new Date();
+                const timeText = (studyDate.getDate() !== now.getDate()) ? formatTime(studyDate).long : formatTime(studyDate).short;
+                document.getElementById('studyStartTime').textContent = `勉強開始時刻: ${timeText}`;
             }
         }
 
-        function stopTimer() {
-            if (running) {
-                clearInterval(timerInterval);
-                elapsedTime += Date.now() - startTime;
-                running = false;
+        function stopStudy() {
+            if (studyRunning) {
+                clearInterval(studyTimerInterval);
+                studyElapsedTime += Date.now() - studyStartTime;
+                studyRunning = false;
             }
         }
 
-        function resetTimer() {
-            clearInterval(timerInterval);
-            elapsedTime = 0;
-            document.getElementById('timer').textContent = "00:00:00";
-            document.getElementById('startTimeDisplay').textContent = "勉強開始時刻: --時--分";
-            running = false;
+        function toggleBreak() {
+            if (!onBreak) {
+                // **休憩開始**
+                stopStudy();
+
+                // **休憩時間リセット**
+                clearInterval(breakTimerInterval);
+                breakElapsedTime = 0;
+                document.getElementById('breakTime').textContent = "00:00:00";
+
+                breakStartTime = Date.now();
+                breakTimerInterval = setInterval(() => {
+                    updateTimer("breakTime", breakStartTime, breakElapsedTime);
+                    updateBreakTotal(true);
+                }, 1000);
+
+                breakRunning = true;
+                document.getElementById('breakTimer').style.display = "block";
+                document.getElementById('breakToggleButton').textContent = "休憩終了";
+                onBreak = true;
+            } else {
+                // **休憩終了**
+                clearInterval(breakTimerInterval);
+                breakElapsedTime += Date.now() - breakStartTime;
+                breakTotalTime += breakElapsedTime;
+                breakRunning = false;
+                document.getElementById('breakTimer').style.display = "none";
+
+                updateBreakTotal(false);
+
+                // **勉強時間を再開**
+                startStudy();
+
+                document.getElementById('breakToggleButton').textContent = "休憩開始";
+                onBreak = false;
+            }
+        }
+
+        function updateBreakTotal(isRealTime) {
+            let total = breakTotalTime;
+            if (isRealTime) {
+                total += Date.now() - breakStartTime;
+            }
+            const hours = String(Math.floor(total / 3600000)).padStart(2, '0');
+            const minutes = String(Math.floor((total % 3600000) / 60000)).padStart(2, '0');
+            const seconds = String(Math.floor((total % 60000) / 1000)).padStart(2, '0');
+            document.getElementById('breakTotal').textContent = `休憩時間合計: ${hours}:${minutes}:${seconds}`;
+        }
+
+        function resetAll() {
+            // **すべてリセット**
+            clearInterval(studyTimerInterval);
+            clearInterval(breakTimerInterval);
+
+            studyElapsedTime = 0;
+            breakElapsedTime = 0;
+            breakTotalTime = 0;
+
+            document.getElementById('studyTimer').textContent = "00:00:00";
+            document.getElementById('studyStartTime').textContent = "勉強開始時刻: --時--分";
+            document.getElementById('breakTime').textContent = "00:00:00";
+            document.getElementById('breakTotal').textContent = "休憩時間合計: 00:00:00";
+
+            document.getElementById('breakTimer').style.display = "none";
+            document.getElementById('breakToggleButton').textContent = "休憩開始";
+
+            studyRunning = false;
+            breakRunning = false;
+            onBreak = false;
         }
     </script>
 
 </body>
 </html>
-
