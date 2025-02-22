@@ -66,6 +66,33 @@
         let breakStartTime = 0, breakElapsedTime = 0, breakTotalTime = 0, breakTimerInterval, breakRunning = false;
         let onBreak = false;
 
+        // ページが読み込まれた時にローカルストレージから値を読み込む
+        window.onload = function() {
+            const savedStudyTime = localStorage.getItem("studyTime");
+            const savedBreakTime = localStorage.getItem("breakTime");
+            const savedBreakTotal = localStorage.getItem("breakTotal");
+
+            if (savedStudyTime) {
+                document.getElementById('studyTimer').textContent = savedStudyTime;
+            }
+            if (savedBreakTime) {
+                document.getElementById('breakTime').textContent = savedBreakTime;
+            }
+            if (savedBreakTotal) {
+                document.getElementById('breakTotal').textContent = savedBreakTotal;
+            }
+        };
+
+        // タイマーの値をローカルストレージに保存する
+        function saveState() {
+            localStorage.setItem("studyTime", document.getElementById('studyTimer').textContent);
+            localStorage.setItem("breakTime", document.getElementById('breakTime').textContent);
+            localStorage.setItem("breakTotal", document.getElementById('breakTotal').textContent);
+        }
+
+        // 定期的に状態を保存
+        setInterval(saveState, 1000); // 1秒ごとに保存
+
         function updateTimer(timerId, startTime, elapsedTime) {
             const now = Date.now() - startTime + elapsedTime;
             const hours = String(Math.floor(now / 3600000)).padStart(2, '0');
