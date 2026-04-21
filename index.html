@@ -1,179 +1,226 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勉強タイマー</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 50px;
-        }
-        .timer {
-            font-size: 72px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        .startTimeDisplay {
-            font-size: 16px;
-            color: gray;
-            margin-bottom: 10px;
-        }
-        .section {
-            margin: 40px 0;
-            padding: 20px;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-        }
-        button {
-            font-size: 18px;
-            margin: 5px;
-            padding: 10px 20px;
-        }
-        #breakTimer {
-            display: none;
-        }
-        #breakTotal {
-            font-size: 14px;
-            color: gray;
-            margin-top: -10px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>麦茶飲み比べチャレンジ</title>
+<style>
+    body { 
+        font-family: sans-serif; 
+        text-align: center; 
+        background-color: #f4ecd8; 
+        color: #333;
+        margin: 0;
+        padding: 20px;
+        overflow-x: hidden;
+    }
+    h1 { color: #5a3d2b; font-size: 24px; margin-bottom: 10px; }
+    #instruction { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #d2691e; min-height: 50px; }
+    
+    #tea-container { 
+        display: flex; 
+        flex-direction: row; 
+        flex-wrap: nowrap;
+        justify-content: center; 
+        align-items: center;
+        gap: 15px; 
+        margin: 0 auto; 
+        width: 100%;
+        max-width: 1000px;
+        overflow-x: auto;
+        padding: 20px 10px;
+        box-sizing: border-box;
+    }
+    
+    .tea-item { 
+        flex: 0 0 auto;
+        width: 140px; 
+        height: 140px; 
+        border: 4px solid #8b5a2b; 
+        border-radius: 12px; 
+        background-color: #fff; 
+        cursor: grab; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        overflow: hidden; 
+        box-shadow: 3px 3px 8px rgba(0,0,0,0.2);
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    
+    /* 正解表示用の小さな画像スタイル */
+    .ans-item {
+        width: 80px;
+        height: 80px;
+        border: 2px solid #5a3d2b;
+        border-radius: 8px;
+        background-color: #fff;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    .controls { margin-top: 20px; }
+    .btn { 
+        padding: 12px 30px; 
+        font-size: 18px; 
+        font-weight: bold;
+        color: white; 
+        border: none; 
+        border-radius: 50px; 
+        cursor: pointer; 
+        margin: 5px; 
+        transition: 0.1s;
+    }
+    .btn:active { transform: translateY(3px); }
+
+    .btn-setup { background-color: #795548; box-shadow: 0 4px 0 #4e342e; }
+    .btn-start { background-color: #4CAF50; box-shadow: 0 4px 0 #2E7D32; }
+    .btn-check { background-color: #d2691e; box-shadow: 0 4px 0 #a0522d; }
+    .btn-reset { background-color: #607D8B; box-shadow: 0 4px 0 #455A64; }
+
+    #result { margin-top: 25px; font-size: 28px; font-weight: bold; min-height: 40px; }
+    .correct { color: #e60012; }
+    .incorrect { color: #005bac; }
+
+    /* 正解表示エリアのスタイル */
+    #answer-display {
+        margin-top: 30px;
+        padding: 15px;
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 15px;
+        display: none; /* 最初は隠す */
+    }
+    .ans-row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 </head>
 <body>
 
-    <!-- 勉強時間 -->
-    <div class="section">
-        <h2>勉強時間</h2>
-        <div id="studyTimer" class="timer">00:00:00</div>
-        <div id="studyStartTime" class="startTimeDisplay">勉強開始時刻: --時--分</div>
-        <button onclick="startStudy()">スタート</button>
-        <button onclick="stopStudy()">ストップ</button>
-        <button onclick="resetAll()">リセット</button>
-        <button id="breakToggleButton" onclick="toggleBreak()">休憩開始</button>
+<h1>麦茶飲み比べチャレンジ</h1>
+<p id="instruction"></p>
 
-        <!-- 休憩時間（初期は非表示）-->
-        <div id="breakTimer">
-            <h2>休憩時間</h2>
-            <div id="breakTime" class="timer">00:00:00</div>
-            <div id="breakTotal" class="startTimeDisplay">休憩時間合計: 00:00:00</div>
-        </div>
-    </div>
+<div id="tea-container"></div>
 
-    <script>
-        let studyStartTime = 0, studyElapsedTime = 0, studyTimerInterval, studyRunning = false, studyDate = null;
-        let breakStartTime = 0, breakElapsedTime = 0, breakTotalTime = 0, breakTimerInterval, breakRunning = false;
-        let onBreak = false;
+<div class="controls">
+    <button id="shuffle-btn" class="btn btn-setup" onclick="shuffleItems()">ランダム並び替え</button>
+    <button id="set-btn" class="btn btn-start" onclick="lockOrder()">挑戦</button>
+    <button id="check-btn" class="btn btn-check" style="display:none;" onclick="checkAnswer()">正解</button>
+    <button id="reset-btn" class="btn btn-reset" style="display:none;" onclick="resetGame()">リセットする</button>
+</div>
 
-        function updateTimer(timerId, startTime, elapsedTime) {
-            const now = Date.now() - startTime + elapsedTime;
-            const hours = String(Math.floor(now / 3600000)).padStart(2, '0');
-            const minutes = String(Math.floor((now % 3600000) / 60000)).padStart(2, '0');
-            const seconds = String(Math.floor((now % 60000) / 1000)).padStart(2, '0');
-            document.getElementById(timerId).textContent = `${hours}:${minutes}:${seconds}`;
+<div id="result"></div>
+
+<div id="answer-display">
+    <div style="font-weight: bold; margin-bottom: 5px;">正解の順番：</div>
+    <div id="answer-row" class="ans-row"></div>
+</div>
+
+<script>
+    const images = [
+        { id: 'tea1', src: '9aff28f2ad495cba56bb2d9dbb0bced9.png' },
+        { id: 'tea2', src: '71GP5fyNR4L._AC_UL210_SR210,210_.jpg' },
+        { id: 'tea3', src: '155396-815-d0f4bb4177ea18fd06c1d04262f8dc62-698x634.jpg' },
+        { id: 'tea4', src: '4582151179478_k.jpg' },
+        { id: 'tea5', src: 'EP47636_3L2.jpg' },
+        { id: 'tea6', src: 'images.jpg' }
+    ];
+
+    const container = document.getElementById('tea-container');
+    const instruction = document.getElementById('instruction');
+    const resultDiv = document.getElementById('result');
+    const answerDisplay = document.getElementById('answer-display');
+    const answerRow = document.getElementById('answer-row');
+    let correctOrderIds = [];
+
+    function init() {
+        container.innerHTML = '';
+        resultDiv.innerHTML = '';
+        answerDisplay.style.display = 'none'; // 正解表示を隠す
+        answerRow.innerHTML = '';
+        instruction.innerHTML = '【出題者】<br>お題を並び替えて、挑戦する際は「挑戦」を押してね';
+        
+        images.forEach(tea => {
+            const div = document.createElement('div');
+            div.className = 'tea-item';
+            div.dataset.id = tea.id;
+            div.style.backgroundImage = `url('${tea.src}')`;
+            container.appendChild(div);
+        });
+
+        new Sortable(container, { animation: 150 });
+        toggleButtons('setup');
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
         }
+    }
 
-        function formatTime(date) {
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hour = String(date.getHours()).padStart(2, '0');
-            const minute = String(date.getMinutes()).padStart(2, '0');
-            return { short: `${hour}時${minute}分`, long: `${month}月${day}日 ${hour}時${minute}分` };
+    function shuffleItems() {
+        const items = Array.from(container.children);
+        shuffleArray(items);
+        items.forEach(item => container.appendChild(item));
+    }
+
+    function lockOrder() {
+        const items = container.querySelectorAll('.tea-item');
+        correctOrderIds = Array.from(items).map(item => item.dataset.id);
+        shuffleItems();
+        instruction.innerHTML = '【挑戦者】<br>麦茶を飲んで、正解の順番に並び替えてください';
+        toggleButtons('play');
+    }
+
+    function checkAnswer() {
+        const items = container.querySelectorAll('.tea-item');
+        const currentOrderIds = Array.from(items).map(item => item.dataset.id);
+        const isCorrect = correctOrderIds.every((id, index) => id === currentOrderIds[index]);
+
+        if (isCorrect) {
+            resultDiv.innerHTML = "🎊 正解 🎊";
+            resultDiv.className = "correct";
+        } else {
+            resultDiv.innerHTML = "ハズレ❌";
+            resultDiv.className = "incorrect";
+            showCorrectAnswer(); // ハズレたときに正解を表示
         }
+        toggleButtons('result');
+    }
 
-        function startStudy() {
-            if (!studyRunning) {
-                studyStartTime = Date.now();
-                studyTimerInterval = setInterval(() => updateTimer("studyTimer", studyStartTime, studyElapsedTime), 1000);
-                studyRunning = true;
-                studyDate = new Date();
+    // 正解の画像を並べて表示する関数
+    function showCorrectAnswer() {
+        answerRow.innerHTML = '';
+        correctOrderIds.forEach(id => {
+            const teaData = images.find(img => img.id === id);
+            const div = document.createElement('div');
+            div.className = 'ans-item';
+            div.style.backgroundImage = `url('${teaData.src}')`;
+            answerRow.appendChild(div);
+        });
+        answerDisplay.style.display = 'block'; // エリアを表示
+    }
 
-                const now = new Date();
-                const timeText = (studyDate.getDate() !== now.getDate()) ? formatTime(studyDate).long : formatTime(studyDate).short;
-                document.getElementById('studyStartTime').textContent = `勉強開始時刻: ${timeText}`;
-            }
-        }
+    function resetGame() {
+        init();
+    }
 
-        function stopStudy() {
-            if (studyRunning) {
-                clearInterval(studyTimerInterval);
-                studyElapsedTime += Date.now() - studyStartTime;
-                studyRunning = false;
-            }
-        }
+    function toggleButtons(mode) {
+        document.getElementById('shuffle-btn').style.display = (mode === 'setup') ? 'inline-block' : 'none';
+        document.getElementById('set-btn').style.display = (mode === 'setup') ? 'inline-block' : 'none';
+        document.getElementById('check-btn').style.display = (mode === 'play') ? 'inline-block' : 'none';
+        document.getElementById('reset-btn').style.display = (mode === 'result') ? 'inline-block' : 'none';
+    }
 
-        function toggleBreak() {
-            if (!onBreak) {
-                // **休憩開始**
-                stopStudy();
-
-                // **休憩時間リセット**
-                clearInterval(breakTimerInterval);
-                breakElapsedTime = 0;
-                document.getElementById('breakTime').textContent = "00:00:00";
-
-                breakStartTime = Date.now();
-                breakTimerInterval = setInterval(() => {
-                    updateTimer("breakTime", breakStartTime, breakElapsedTime);
-                    updateBreakTotal(true);
-                }, 1000);
-
-                breakRunning = true;
-                document.getElementById('breakTimer').style.display = "block";
-                document.getElementById('breakToggleButton').textContent = "休憩終了";
-                onBreak = true;
-            } else {
-                // **休憩終了**
-                clearInterval(breakTimerInterval);
-                breakElapsedTime += Date.now() - breakStartTime;
-                breakTotalTime += breakElapsedTime;
-                breakRunning = false;
-                document.getElementById('breakTimer').style.display = "none";
-
-                updateBreakTotal(false);
-
-                // **勉強時間を再開**
-                startStudy();
-
-                document.getElementById('breakToggleButton').textContent = "休憩開始";
-                onBreak = false;
-            }
-        }
-
-        function updateBreakTotal(isRealTime) {
-            let total = breakTotalTime;
-            if (isRealTime) {
-                total += Date.now() - breakStartTime;
-            }
-            const hours = String(Math.floor(total / 3600000)).padStart(2, '0');
-            const minutes = String(Math.floor((total % 3600000) / 60000)).padStart(2, '0');
-            const seconds = String(Math.floor((total % 60000) / 1000)).padStart(2, '0');
-            document.getElementById('breakTotal').textContent = `休憩時間合計: ${hours}:${minutes}:${seconds}`;
-        }
-
-        function resetAll() {
-            // **すべてリセット**
-            clearInterval(studyTimerInterval);
-            clearInterval(breakTimerInterval);
-
-            studyElapsedTime = 0;
-            breakElapsedTime = 0;
-            breakTotalTime = 0;
-
-            document.getElementById('studyTimer').textContent = "00:00:00";
-            document.getElementById('studyStartTime').textContent = "勉強開始時刻: --時--分";
-            document.getElementById('breakTime').textContent = "00:00:00";
-            document.getElementById('breakTotal').textContent = "休憩時間合計: 00:00:00";
-
-            document.getElementById('breakTimer').style.display = "none";
-            document.getElementById('breakToggleButton').textContent = "休憩開始";
-
-            studyRunning = false;
-            breakRunning = false;
-            onBreak = false;
-        }
-    </script>
-
+    init();
+</script>
 </body>
 </html>
